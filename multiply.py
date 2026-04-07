@@ -14,7 +14,7 @@ if __name__ == "__main__":
     subprocess.run(["gcc", "multiply.c", "-o", "multiply.exe"])
     
     execution_times = []
-    iterations = 100000
+    iterations = 1000
     print(f"Calcul de {iterations} multiplications...")
     for i in range(iterations):
         start_time = time.perf_counter()
@@ -31,8 +31,11 @@ if __name__ == "__main__":
     print(f"Q3 execution time: {np.percentile(execution_times, 75)} milliseconds")
     print(f"WCET execution time: {max(execution_times)} milliseconds")
         
-    #plot the histogram of execution times
-    plt.hist(execution_times)
+    # On limite l'intervalle au 99e centile pour ignorer les rares valeurs extrêmes (outliers)
+    upper_bound = np.percentile(execution_times, 99)
+    
+    # plot the histogram of execution times avec plus de barres (bins) et un intervalle réduit (range)
+    plt.hist(execution_times, bins=50, range=(min(execution_times), upper_bound), color='skyblue', edgecolor='black')
     plt.title("Execution Time of Multiplication")
     plt.xlabel("Execution Time (milliseconds)")
     plt.ylabel("Frequency")
