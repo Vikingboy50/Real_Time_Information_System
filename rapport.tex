@@ -1,23 +1,164 @@
-\documentclass[12pt, a4paper]{article}
-\usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
-\usepackage[french]{babel}
-
-\title{Real Time Information System Report}
-\author{Lavigne Lucas}
-\date{\today}
-
+\documentclass{report}
+\renewcommand{\thesection}{\arabic{section}}
+\usepackage{blindtext}
+\usepackage[english]{babel}
+\usepackage{amssymb} % pour les équations
+\usepackage{amsfonts}
+\usepackage{float} % Pour utiliser l'option H pour les figures
+\usepackage{graphicx}
+\usepackage{ulem} % pour les styles de textes
+\usepackage{soul}
+\usepackage{listings} % citer des codes pythons avec le style
+\usepackage{multicol}
+% \usepackage{float} % pour les images
+\usepackage{minted}
+\usepackage{verbatimbox}
+\usepackage{mdframed}
+\usepackage{python}
+\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+\usepackage{tcolorbox} % pour faire les box stylé pour le code là
+\usepackage{examplep}
+\usepackage{adjustbox}
+\usepackage{fancyvrb}
+\usepackage{fancyhdr, lastpage}
+\usepackage{etoolbox}
+\usepackage{dirtytalk}
+\patchcmd{\chapter}{\thispagestyle{plain}}{\thispagestyle{fancy}}{}{}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=red,
+    pdftitle={In422_Rapport_Real_Time_Information_System},}
+ 
+\usepackage[Lenny]{fncychap}
+% Options : Sonny, Lenny, Glenn, Conny, Rejne, Bjarne, Bjornstrup
+% mise en page---------------------------------------------------
+\usepackage[top=75pt, bottom=75pt, left=65pt, right=65pt]{geometry}
+\setcounter{tocdepth}{3}
+\setcounter{secnumdepth}{3}
+\pagestyle{fancy}
+ 
+ 
+ 
+%\fancyhead{BE Ma312}
+ 
+\fancyfoot[C]{}
+ 
+\lhead{IPSA - Institut Polytechnique des Sciences Avancées}
+ 
+\rhead{In422 Project}
+\rfoot{\thepage/\pageref{LastPage}}
+ 
+ 
+% \title{BE_Ma223}
+\author{Jérémy Table}
+\date{3 juin 2024}
+ 
+ 
 \begin{document}
-\maketitle
+ 
+ 
+\begin{titlepage}
+    \centering
+    \vspace*{10mm}
+    
+    \Huge
+    \textbf{In422 Real Time Information System}
+ 
+    \huge
+    \textbf{Real-Time Information System Project Report
+}
+    
+    \vspace{10mm}
+    
+    
+    \large
+    Written by:
+    \vspace{4mm}
+    
+    \large
+    Lucas LAVIGNE
+    
+    \vspace{18mm}
+    
+    \large
+    \textbf{IPSA - Institut Polytechnique des Sciences Avancées}
+    
+    \vspace{3mm}
+    \large
+    School Year 2025-2026
+    
+\end{titlepage}
+
 \tableofcontents
 
 \section{Introduction}
-Ce rapport présente une analyse détaillée du système d'information en temps réel. Nous allons examiner les différentes composantes du système, les technologies utilisées, ainsi que les défis rencontrés lors de sa mise en œuvre.
+This report presents the project for the final assignment of the real-time information system course.
+The objective is to study the behavior of a simple C code and find the best schedule to integrate this task in a task set.
 
-\section{Analyse}
-Dans cette section, nous allons analyser les différentes parties du système d'information en temps réel. Nous allons commencer par une description générale du système, suivie d'une analyse des technologies utilisées et des défis rencontrés.
+\section{C code and time statistics of execution}
+
+The C code is a simple multiplication of two big random numbers, between 1 and 1 000 000.
+The Python code compiles the C code and executes it 1000 times using the subprocess module and calculates the execution time.
+
+The statistics of the execution time are the following :
+\begin{itemize}
+\item Min execution time: 5.95 milliseconds
+\item WCET execution time: 86.40 milliseconds
+\item Q1 execution time: 6.19 milliseconds
+\item Q2 execution time: 6.52 milliseconds
+\item Q3 execution time: 6.92 milliseconds
+\end{itemize}
+
+\section{Scheduling analysis}
+\subsection{Schedulability}
+To determine if the task is schedulable, we can use the utilization-based test for Rate Monotonic Scheduling (RMS). The utilization (U) of a task is calculated as:
+\[U = \sum_{i=1}^{n}\frac{C_i}{T_i} \]
+Where C is the worst-case execution time (WCET), T is the period of the task and n is the number of tasks.
+In our case if we use the WCET of 86.40 milliseconds and the given following task table :
+\begin{center}
+\begin{tabular}{|c|c|c|}
+\hline
+Task & WCET (C) & Period (T) \\
+\hline
+$\tau_1$ & $C_i$ & 10  \\
+$\tau_2$ & 3  & 10  \\
+$\tau_3$ & 2  & 20  \\
+$\tau_4$ & 2  & 20  \\
+$\tau_5$ & 2  & 40  \\
+$\tau_6$ & 2  & 40  \\
+$\tau_7$ & 3  & 80  \\
+\hline
+\end{tabular}
+\end{center}
+
+If we take the values of the table as ms, the utilization of the task set is calculated as follows:
+\[U = \frac{86.40}{10} + \frac{3}{10} + \frac{2}{20} + \frac{2}{20} + \frac{2}{40} + \frac{2}{40} + \frac{3}{80} = 8.64 + 0.3 + 0.1 + 0.1 + 0.05 + 0.05 + 0.0375 = 9.2875\]
+
+Since the utilization is greater than 1, the task set is not schedulable under RMS.
+Therefore for the study we will use an execution time of 3 milliseconds.\newline
+So the new utilization is calculated as follows:
+\[U = \frac{3}{10} + \frac{3}{10} + \frac{2}{20} + \frac{2}{20} + \frac{2}{40} + \frac{2}{40} + \frac{3}{80} = 0.3 + 0.3 + 0.1 + 0.1 + 0.05 + 0.05 + 0.0375 = 0.9375\]
+Since the utilization is less than 1, the task set is schedulable under RMS.
+\subsection{Determining the best schedule}
+The hyperperiod of the task set is calculated as the least common multiple (LCM) of the periods of the tasks. The periods are 10, 20, 40, and 80 milliseconds. The LCM of these periods is 80 milliseconds. Therefore, the hyperperiod of the task set is 80 milliseconds.
+First we list all the possible schedules for the task set, then we calculate the response time for each task in each schedule and determine if the tasks meet their deadlines. The best schedule is the one that allows all tasks to meet their deadlines while minimizing the response time.
+After analyzing the schedules, we find that the best schedule is the one that allows all tasks to meet their deadlines while minimizing the response time. In this case, the best schedule is the following graph:
+
+\begin{center}
+\includegraphics[width=0.8\textwidth]{Graph Final_page-0001.jpg}
+\end{center}
+
+We obtain the following results:
+
+Because Hyperperiode, $C_i$, and $T_i$ are fixed parameters defined entirely by the task set, both expected idle time $E_{total}$ and actual idle time $I_{total}$ are fundamental constants of the system. A scheduling algorithm can neither create nor destroy computational work.
+
+Therefore, minimizing the total waiting time across all jobs does not maximize the total processor idle time. Instead, an optimized schedule alters the distribution of the idle time. By minimizing delays and executing jobs as efficiently as possible, the algorithm consolidates the idle periods into larger, contiguous blocks (typically toward the end of the scheduling cycles), rather than fragmenting them into small, inefficient gaps between task executions.
 
 \section{Conclusion}
-En conclusion, le système d'information en temps réel est un élément crucial pour de nombreuses applications modernes. Il permet de traiter et d'analyser les données en temps réel, ce qui est essentiel pour prendre des décisions rapides et informées. Cependant, la mise en œuvre de tels systèmes peut présenter des défis importants, notamment en termes de performance, de sécurité et de gestion des données.
-\end{document}
+In conclusion, this project provided a comprehensive analysis of a real-time system's behavior, from execution time profiling to task scheduling. Initially, we observed that the worst-case execution time (WCET) of the C program was too high (86.40 ms) to be integrated into the given task set under Rate Monotonic Scheduling (RMS), as the utilization factor exceeded 1. By assuming a bounded execution time of 3 ms, we successfully achieved a schedulable system with a valid utilization factor of 0.9375.
 
+Furthermore, the scheduling analysis over the 80 ms hyperperiod highlighted a fundamental principle of real-time systems: while an optimized scheduling algorithm can minimize total waiting times and ensure all deadlines are met, it cannot alter the total processor idle time. Instead, an efficient schedule merely redistributes this idle time, consolidating it into larger blocks rather than fragmented delays. This project successfully demonstrated the importance of accurate execution time profiling and the practical implications of scheduling strategies in real-time environments.
+
+\end{document}

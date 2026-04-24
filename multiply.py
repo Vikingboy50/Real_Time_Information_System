@@ -8,149 +8,145 @@ import time
 import subprocess
 import numpy as np
 import matplotlib.pyplot as plt
-import itertools
+import math
 
-if __name__ == "__main__":
-    print("Compilation en cours...")
-    subprocess.run(["gcc", "multiply.c", "-o", "multiply.exe"])
+print("Compilation en cours...")
+subprocess.run(["gcc", "multiply.c", "-o", "multiply.exe"])
+
+execution_times = []
+iterations = 1000
+print(f"Calcul de {iterations} multiplications...")
+for i in range(iterations):
+    start_time = time.perf_counter()
+    subprocess.run(["./multiply.exe"], capture_output=True, text=True)
+    end_time = time.perf_counter()
+    execution_times.append((end_time - start_time) * 1e3)  # Convert to milliseconds
+    print(f"Pourcentage d'exécution: {((i+1)/iterations)*100:.2f}%", end="\r")
+
+print("Stats:")
+print(f"Min execution time: {min(execution_times)} milliseconds")
+print(f"Max execution time: {max(execution_times)} milliseconds")
+print(f"Q1 execution time: {np.percentile(execution_times, 25)} milliseconds")
+print(f"Q2 execution time: {np.percentile(execution_times, 50)} milliseconds")
+print(f"Q3 execution time: {np.percentile(execution_times, 75)} milliseconds")
+print(f"WCET execution time: {max(execution_times)} milliseconds")
     
-    execution_times = []
-    iterations = 1000
-    print(f"Calcul de {iterations} multiplications...")
-    for i in range(iterations):
-        start_time = time.perf_counter()
-        subprocess.run(["./multiply.exe"], capture_output=True, text=True)
-        end_time = time.perf_counter()
-        execution_times.append((end_time - start_time) * 1e3)  # Convert to milliseconds
-        print(f"Pourcentage d'exécution: {((i+1)/iterations)*100:.2f}%", end="\r")
-    
-    print("Stats:")
-    print(f"Min execution time: {min(execution_times)} milliseconds")
-    print(f"Max execution time: {max(execution_times)} milliseconds")
-    print(f"Q1 execution time: {np.percentile(execution_times, 25)} milliseconds")
-    print(f"Q2 execution time: {np.percentile(execution_times, 50)} milliseconds")
-    print(f"Q3 execution time: {np.percentile(execution_times, 75)} milliseconds")
-    print(f"WCET execution time: {max(execution_times)} milliseconds")
-        
-    # On limite l'intervalle au 99e centile pour ignorer les rares valeurs extrêmes (outliers)
-    upper_bound = np.percentile(execution_times, 99)
-    
-    # plot the histogram of execution times avec plus de barres (bins) et un intervalle réduit (range)
-    plt.hist(execution_times, bins=50, range=(min(execution_times), upper_bound), color='skyblue', edgecolor='black')
-    plt.title("Execution Time of Multiplication")
-    plt.xlabel("Execution Time (milliseconds)")
-    plt.ylabel("Frequency")
-    #plt.show()
-    
-    #----------------------------------
-    # Determination du planning optimal
-    #----------------------------------
-    
-    # Task parameters
-    Tasks = [
-        {"name": "Task 1", "execution_time": 3, "period": 10},
-        {"name": "Task 2", "execution_time": 3, "period": 10},
-        {"name": "Task 3", "execution_time": 2, "period": 20},
-        #On limite le nombre de tâches pour éviter une explosion combinatoire du nombre de plannings possibles
-        #{"name": "Task 4", "execution_time": 2, "period": 20},
-        #{"name": "Task 5", "execution_time": 2, "period": 40},
-        #{"name": "Task 6", "execution_time": 2, "period": 40},
-        #{"name": "Task 7", "execution_time": 3, "period": 80}
-    ]
-    # Calculate utilization for each task
-    for task in Tasks:
-        task["utilization"] = task["execution_time"] / task["period"]
-    #Total utilization
-    total_utilization = sum(task["utilization"] for task in Tasks)
-    print(f"Total Utilization: {total_utilization:.2f}")
-    
-    # Defining all possible schedules
-    task_schedules_list = []
-    
-    for task in Tasks:
-        for i in range(task["period"] // task["execution_time"]):
-            task_schedules_list.append({
-                "name": task["name"],
-                "execution_time": task["execution_time"],
-                "period": task["period"],
-                "instance": i + 1
+# On limite l'intervalle au 99e centile pour ignorer les rares valeurs extrêmes (outliers)
+upper_bound = np.percentile(execution_times, 99)
+
+# plot the histogram of execution times avec plus de barres (bins) et un intervalle réduit (range)
+plt.hist(execution_times, bins=50, range=(min(execution_times), upper_bound), color='skyblue', edgecolor='black')
+plt.title("Execution Time of Multiplication")
+plt.xlabel("Execution Time (milliseconds)")
+plt.ylabel("Frequency")
+#plt.show()
+
+#%%
+
+import numpy as np
+import math
+
+# ==========================================
+# 1. Configuration du Task Set
+# ==========================================
+# Format: { "id": "t_name", "C": execution_time, "T": period }
+# On assume que Deadline (D) = Period (T)
+tasks = [
+    {"id": "t1", "C": 3, "T": 10},
+    {"id": "t2", "C": 3, "T": 10},
+    {"id": "t3", "C": 2, "T": 20},
+    {"id": "t4", "C": 2, "T": 20},
+    {"id": "t5", "C": 2, "T": 40},
+    {"id": "t6", "C": 2, "T": 40},
+    {"id": "t7", "C": 3, "T": 80},
+]
+
+# Calcul de l'hyperpériode (PPCM des périodes)
+periods = [t["T"] for t in tasks]
+hyperperiod = math.lcm(*periods)
+
+# Calcul de l'utilisation du processeur (U)
+utilization = sum(t["C"] / t["T"] for t in tasks)
+
+# ==========================================
+# 2. Ordonnancement Non-Préemptif (EDF)
+# ==========================================
+def generate_schedule(tasks, hyperperiod):
+    jobs = []
+    # Génération de tous les jobs sur l'hyperpériode
+    for t in tasks:
+        num_jobs = hyperperiod // t["T"]
+        for k in range(num_jobs):
+            jobs.append({
+                "task_id": t["id"],
+                "job_id": f"{t['id']}_{k+1}",
+                "arrival": k * t["T"],
+                "execution": t["C"],
+                "deadline": (k + 1) * t["T"],
+                "start_time": None,
+                "end_time": None
             })
-    print("Task schedules list:")
-    for task in task_schedules_list:
-        print(task)
-    
-    # Pré-calcul des informations pour l'algorithme de génération de plannings avec algo de backtracking
-    task_counts = {task["name"]: task["period"] // task["execution_time"] for task in Tasks} # Nombre d'instances de chaque tâche
-    task_instances_map = {task["name"]: [] for task in Tasks} # Map pour stocker les instances de chaque tâche
-    for instance in task_schedules_list:
-        task_instances_map[instance["name"]].append(instance)# On remplit la map avec les instances de chaque tâche
-        
-    all_possible_schedules = []
-    
-    def generate_schedules(current_schedule, counts):
-        """Génère tous les plannings possibles en utilisant un algorithme de backtracking.
-        current_schedule: le planning en cours de construction
-        counts: un dictionnaire qui suit le nombre d'instances de chaque tâche déjà utilisées dans le planning en cours de construction
-        """
-        if len(current_schedule) == len(task_schedules_list):
-            all_possible_schedules.append(list(current_schedule))
-            return
             
-        for task in Tasks:
-            name = task["name"]
-            if counts[name] < task_counts[name]: # Si on n'a pas encore utilisé toutes les instances de cette tâche
-                current_schedule.append(task_instances_map[name][counts[name]]) # On ajoute la prochaine instance de cette tâche au planning en cours de construction
-                counts[name] += 1
-                generate_schedules(current_schedule, counts) # On continue à construire le planning avec cette instance de tâche ajoutée
-                counts[name] -= 1
-                current_schedule.pop() # On retire la tâche ajoutée pour essayer une autre instance de tâche ou une autre tâche
+    current_time = 0
+    completed_jobs = []
+    idle_times = 0
+    
+    while len(completed_jobs) < len(jobs):
+        # Jobs disponibles à l'instant t
+        available_jobs = [j for j in jobs if j["arrival"] <= current_time and j["start_time"] is None]
+        
+        if not available_jobs:
+            current_time += 1
+            idle_times += 1
+            continue
+            
+        # Stratégie EDF (Earliest Deadline First) pour minimiser l'attente tout en respectant les échéances
+        # En cas d'égalité d'échéance, on favorise le temps d'exécution le plus court (SJF)
+        available_jobs.sort(key=lambda x: (x["deadline"], x["execution"]))
+        
+        selected_job = available_jobs[0]
+        selected_job["start_time"] = current_time
+        selected_job["end_time"] = current_time + selected_job["execution"]
+        
+        # Le processeur est occupé jusqu'à la fin du job (Non-préemptif)
+        current_time = selected_job["end_time"]
+        completed_jobs.append(selected_job)
 
-    generate_schedules([], {task["name"]: 0 for task in Tasks})
+    return completed_jobs, idle_times
+
+# ==========================================
+# 3. Exécution et Vérification
+# ==========================================
+print(f"\n--- Analyse de base ---")
+print(f"Hyperpériode (H): {hyperperiod}")
+print(f"Utilisation (U) avec C1={3}: {utilization:.4f} (Doit être <= 1 pour être ordonnançable)")
+
+schedule, total_idle_time = generate_schedule(tasks, hyperperiod)
+
+missed_deadlines = []
+total_wait_time = 0
+
+print("\n--- Analyse des temps de réponse (par job) ---")
+for job in sorted(schedule, key=lambda x: x["start_time"]):
+    response_time = job["end_time"] - job["arrival"]
+    wait_time = job["start_time"] - job["arrival"]
+    total_wait_time += wait_time
     
-    print(f"Number of possible schedules: {len(all_possible_schedules)}")
-    
-    # Computation of response times for each schedule
-    def compute_response_times(schedule):
-        """Calcule les temps de réponse pour un planning donné.
-        schedule: le planning pour lequel on veut calculer les temps de réponse
-        """
-        response_times = {}
-        current_time = 0
+    status = "OK"
+    if response_time > (job["deadline"] - job["arrival"]):
+        status = "MISSED DEADLINE"
+        missed_deadlines.append(job)
         
-        for task_instance in schedule:
-            task_name = task_instance["name"]
-            execution_time = task_instance["execution_time"]
-            period = task_instance["period"]
-            
-            # Le temps de réponse est le temps actuel plus le temps d'exécution de la tâche
-            response_time = current_time + execution_time
-            
-            # On stocke le temps de réponse pour cette instance de tâche
-            response_times[(task_name, task_instance["instance"])] = response_time
-            
-            # On avance le temps actuel du temps d'exécution de la tâche
-            current_time += execution_time
-            
-            # Si le temps actuel dépasse la période de la tâche, cela signifie que la tâche n'est pas terminée avant sa prochaine instance, donc on peut arrêter le calcul des temps de réponse pour ce planning
-            if current_time > period:
-                return None
-        
-        return response_times
+    print(f"[{job['start_time']:02d}-{job['end_time']:02d}] {job['job_id']:<6} | Arrivée: {job['arrival']:02d} | Échéance: {job['deadline']:02d} | Rép: {response_time:02d} | Attente: {wait_time:02d} -> {status}")
+
+print("\n--- Bilan de l'optimisation ---")
+print(f"Temps d'attente total (Délai) : {total_wait_time}")
+print(f"Temps d'inactivité total du processeur : {total_idle_time}")
+
+# Vérification du paradoxe mentionné dans l'énoncé
+expected_idle_time = hyperperiod - sum(t["C"] * (hyperperiod // t["T"]) for t in tasks)
+print(f"Vérification : Le temps d'inactivité total théorique sur l'hyperpériode est de {expected_idle_time}.")
+if total_idle_time == expected_idle_time:
+    print("Conclusion : Minimiser le temps d'attente modifie le *moment* de l'inactivité, mais l'inactivité *totale* sur l'hyperpériode reste constante et dépend uniquement des caractéristiques du Task Set.")
     
-    optimal_schedule = None
-    optimal_response_times = None
-    
-    for schedule in all_possible_schedules:
-        response_times = compute_response_times(schedule)
-        if response_times is not None: # Si le planning est réalisable (tous les temps de réponse sont inférieurs aux périodes correspondantes)
-            if optimal_response_times is None or max(response_times.values()) < max(optimal_response_times.values()):
-                optimal_schedule = schedule
-                optimal_response_times = response_times
-    
-    print("Optimal Schedule:")
-    for task_instance in optimal_schedule:
-        print(task_instance)
-    print("Optimal Response Times:")
-    for task_instance, response_time in optimal_response_times.items():
-        print(f"{task_instance}: {response_time} ms")
-    
+# %%
