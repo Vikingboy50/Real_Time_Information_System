@@ -10,7 +10,6 @@
 \usepackage{soul}
 \usepackage{listings} % citer des codes pythons avec le style
 \usepackage{multicol}
-% \usepackage{float} % pour les images
 \usepackage{minted}
 \usepackage{verbatimbox}
 \usepackage{mdframed}
@@ -23,14 +22,16 @@
 \usepackage{fancyhdr, lastpage}
 \usepackage{etoolbox}
 \usepackage{dirtytalk}
+\usepackage{booktabs} % Ajouté pour des tableaux plus professionnels
 \patchcmd{\chapter}{\thispagestyle{plain}}{\thispagestyle{fancy}}{}{}
 \usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
     linkcolor=blue,
     urlcolor=red,
-    pdftitle={In422_Rapport_Real_Time_Information_System},}
- 
+    pdftitle={In422_Rapport_Real_Time_Information_System} % Virgule en trop retirée ici
+}
+
 \usepackage[Lenny]{fncychap}
 % Options : Sonny, Lenny, Glenn, Conny, Rejne, Bjarne, Bjornstrup
 % mise en page---------------------------------------------------
@@ -38,40 +39,30 @@
 \setcounter{tocdepth}{3}
 \setcounter{secnumdepth}{3}
 \pagestyle{fancy}
- 
- 
- 
+
 %\fancyhead{BE Ma312}
- 
 \fancyfoot[C]{}
- 
 \lhead{IPSA - Institut Polytechnique des Sciences Avancées}
- 
 \rhead{In422 Project}
 \rfoot{\thepage/\pageref{LastPage}}
- 
- 
+
 % \title{BE_Ma223}
 \author{Jérémy Table}
 \date{3 juin 2024}
- 
- 
+
 \begin{document}
- 
- 
+
 \begin{titlepage}
     \centering
     \vspace*{10mm}
     
     \Huge
-    \textbf{In422 Real Time Information System}
- 
+    \textbf{In422 Real-Time Information System}
+
     \huge
-    \textbf{Real-Time Information System Project Report
-}
+    \textbf{Project Report}
     
     \vspace{10mm}
-    
     
     \large
     Written by:
@@ -92,73 +83,83 @@
 \end{titlepage}
 
 \tableofcontents
+\newpage
 
 \section{Introduction}
 This report presents the project for the final assignment of the real-time information system course.
-The objective is to study the behavior of a simple C code and find the best schedule to integrate this task in a task set.
+The objective is to study the behavior of a simple C code and find the best schedule to integrate this task into a task set.
 
-\section{C code and time statistics of execution}
+\section{C Code and Execution Time Statistics}
 
-The C code is a simple multiplication of two big random numbers, between 1 and 1 000 000.
-The Python code compiles the C code and executes it 1000 times using the subprocess module and calculates the execution time.
+The C code performs a simple multiplication of two large random numbers, ranging between 1 and 1,000,000.
+A Python script compiles the C code, executes it 1,000 times using the \texttt{subprocess} module, and calculates the execution time.
 
-The statistics of the execution time are the following :
+The statistics of the execution time are as follows:
 \begin{itemize}
-\item Min execution time: 5.95 milliseconds
-\item WCET execution time: 86.40 milliseconds
-\item Q1 execution time: 6.19 milliseconds
-\item Q2 execution time: 6.52 milliseconds
-\item Q3 execution time: 6.92 milliseconds
+\item Minimum execution time: 5.95~ms
+\item Worst-Case Execution Time (WCET): 86.40~ms
+\item Q1 execution time: 6.19~ms
+\item Median (Q2) execution time: 6.52~ms
+\item Q3 execution time: 6.92~ms
 \end{itemize}
 
-\section{Scheduling analysis}
+\section{Scheduling Analysis}
 \subsection{Schedulability}
-To determine if the task is schedulable, we can use the utilization-based test for Rate Monotonic Scheduling (RMS). The utilization (U) of a task is calculated as:
+To determine if the task set is schedulable, we use the utilization-based test for Rate Monotonic Scheduling (RMS). The utilization ($U$) of a task set is calculated as:
 \[U = \sum_{i=1}^{n}\frac{C_i}{T_i} \]
-Where C is the worst-case execution time (WCET), T is the period of the task and n is the number of tasks.
-In our case if we use the WCET of 86.40 milliseconds and the given following task table :
+Where $C_i$ is the worst-case execution time (WCET), $T_i$ is the period of the task, and $n$ is the total number of tasks.
+
+In our case, using the measured WCET of 86.40~ms for our C code (assigned to $\tau_1$), we consider the following task table:
+
 \begin{center}
-\begin{tabular}{|c|c|c|}
-\hline
-Task & WCET (C) & Period (T) \\
-\hline
-$\tau_1$ & $C_i$ & 10  \\
-$\tau_2$ & 3  & 10  \\
-$\tau_3$ & 2  & 20  \\
-$\tau_4$ & 2  & 20  \\
-$\tau_5$ & 2  & 40  \\
-$\tau_6$ & 2  & 40  \\
-$\tau_7$ & 3  & 80  \\
-\hline
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{ccc}
+\toprule
+\textbf{Task} & \textbf{WCET ($C_i$ in ms)} & \textbf{Period ($T_i$ in ms)} \\
+\midrule
+$\tau_1$ & 86.40 & 10  \\
+$\tau_2$ & 3     & 10  \\
+$\tau_3$ & 2     & 20  \\
+$\tau_4$ & 2     & 20  \\
+$\tau_5$ & 2     & 40  \\
+$\tau_6$ & 2     & 40  \\
+$\tau_7$ & 3     & 80  \\
+\bottomrule
 \end{tabular}
 \end{center}
 
-If we take the values of the table as ms, the utilization of the task set is calculated as follows:
-\[U = \frac{86.40}{10} + \frac{3}{10} + \frac{2}{20} + \frac{2}{20} + \frac{2}{40} + \frac{2}{40} + \frac{3}{80} = 8.64 + 0.3 + 0.1 + 0.1 + 0.05 + 0.05 + 0.0375 = 9.2875\]
+The utilization of the task set is calculated as follows:
+\[U = \frac{86.40}{10} + \frac{3}{10} + \frac{2}{20} + \frac{2}{20} + \frac{2}{40} + \frac{2}{40} + \frac{3}{80}\]
+\[U = 8.64 + 0.3 + 0.1 + 0.1 + 0.05 + 0.05 + 0.0375 = 9.2775\]
 
-Since the utilization is greater than 1, the task set is not schedulable under RMS.
-Therefore for the study we will use an execution time of 3 milliseconds.\newline
-So the new utilization is calculated as follows:
-\[U = \frac{3}{10} + \frac{3}{10} + \frac{2}{20} + \frac{2}{20} + \frac{2}{40} + \frac{2}{40} + \frac{3}{80} = 0.3 + 0.3 + 0.1 + 0.1 + 0.05 + 0.05 + 0.0375 = 0.9375\]
-Since the utilization is less than 1, the task set is schedulable under RMS.
-\subsection{Determining the best schedule}
-The hyperperiod of the task set is calculated as the least common multiple (LCM) of the periods of the tasks. The periods are 10, 20, 40, and 80 milliseconds. The LCM of these periods is 80 milliseconds. Therefore, the hyperperiod of the task set is 80 milliseconds.
-First we list all the possible schedules for the task set, then we calculate the response time for each task in each schedule and determine if the tasks meet their deadlines. The best schedule is the one that allows all tasks to meet their deadlines while minimizing the response time.
-After analyzing the schedules, we find that the best schedule is the one that allows all tasks to meet their deadlines while minimizing the response time. In this case, the best schedule is the following graph:
+Since the utilization is significantly greater than 1, the task set is not schedulable under RMS. 
+Therefore, for the remainder of this study, we will assume an optimized execution time of 3~ms for $\tau_1$. 
+
+The new utilization factor is calculated as follows:
+\[U = \frac{3}{10} + \frac{3}{10} + \frac{2}{20} + \frac{2}{20} + \frac{2}{40} + \frac{2}{40} + \frac{3}{80}\]
+\[U = 0.3 + 0.3 + 0.1 + 0.1 + 0.05 + 0.05 + 0.0375 = 0.9375\]
+
+Since the new utilization is less than 1, the task set is now schedulable under RMS.
+
+\subsection{Determining the Best Schedule}
+The hyperperiod of the task set is calculated as the least common multiple (LCM) of the task periods. The periods are 10, 20, 40, and 80~ms. The LCM of these periods is 80~ms. Therefore, the hyperperiod of the task set is 80~ms.
+
+First, we list all the possible schedules for the task set. Then, we calculate the response time for each task in each schedule to determine if the tasks meet their deadlines. After analyzing the schedules, we identify the optimal one that allows all tasks to meet their deadlines while minimizing the response time. In this case, the best schedule is represented by the following graph:
 
 \begin{center}
-\includegraphics[width=0.8\textwidth]{Graph Final_page-0001.jpg}
+% Assurez-vous que l'image est bien dans le même dossier
+\includegraphics[width=0.8\textwidth]{Graph Final_page-0001.jpg} 
 \end{center}
 
 We obtain the following results:
 
-Because Hyperperiode, $C_i$, and $T_i$ are fixed parameters defined entirely by the task set, both expected idle time $E_{total}$ and actual idle time $I_{total}$ are fundamental constants of the system. A scheduling algorithm can neither create nor destroy computational work.
+Because the hyperperiod, $C_i$, and $T_i$ are fixed parameters defined entirely by the task set, both expected idle time ($E_{total}$) and actual idle time ($I_{total}$) are fundamental constants of the system. A scheduling algorithm can neither create nor destroy computational work.
 
-Therefore, minimizing the total waiting time across all jobs does not maximize the total processor idle time. Instead, an optimized schedule alters the distribution of the idle time. By minimizing delays and executing jobs as efficiently as possible, the algorithm consolidates the idle periods into larger, contiguous blocks (typically toward the end of the scheduling cycles), rather than fragmenting them into small, inefficient gaps between task executions.
+Therefore, minimizing the total waiting time across all jobs does not maximize the total processor idle time. Instead, an optimized schedule simply alters the distribution of the idle time. By minimizing delays and executing jobs as efficiently as possible, the algorithm consolidates the idle periods into larger, contiguous blocks (typically toward the end of the scheduling cycles), rather than fragmenting them into small, inefficient gaps between task executions.
 
 \section{Conclusion}
-In conclusion, this project provided a comprehensive analysis of a real-time system's behavior, from execution time profiling to task scheduling. Initially, we observed that the worst-case execution time (WCET) of the C program was too high (86.40 ms) to be integrated into the given task set under Rate Monotonic Scheduling (RMS), as the utilization factor exceeded 1. By assuming a bounded execution time of 3 ms, we successfully achieved a schedulable system with a valid utilization factor of 0.9375.
+In conclusion, this project provided a comprehensive analysis of a real-time system's behavior, from execution time profiling to task scheduling. Initially, we observed that the worst-case execution time (WCET) of the C program was too high (86.40~ms) to be integrated into the given task set under Rate Monotonic Scheduling (RMS), as the utilization factor exceeded 1. By assuming a bounded execution time of 3~ms, we successfully achieved a schedulable system with a valid utilization factor of 0.9375.
 
-Furthermore, the scheduling analysis over the 80 ms hyperperiod highlighted a fundamental principle of real-time systems: while an optimized scheduling algorithm can minimize total waiting times and ensure all deadlines are met, it cannot alter the total processor idle time. Instead, an efficient schedule merely redistributes this idle time, consolidating it into larger blocks rather than fragmented delays. This project successfully demonstrated the importance of accurate execution time profiling and the practical implications of scheduling strategies in real-time environments.
+Furthermore, the scheduling analysis over the 80~ms hyperperiod highlighted a fundamental principle of real-time systems: while an optimized scheduling algorithm can minimize total waiting times and ensure all deadlines are met, it cannot alter the total processor idle time. Instead, an efficient schedule merely redistributes this idle time, consolidating it into larger blocks rather than fragmented delays. This project successfully demonstrated the importance of accurate execution time profiling and the practical implications of scheduling strategies in real-time environments.
 
 \end{document}

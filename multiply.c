@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <time.h>
 
-// Fonction qui génère 2 nombres aléatoires jusqu'à 1000000 et les multiplie
+// Function that generates 2 random numbers up to 1000000 and multiplies them
 
 long long multiply_random_numbers() {
     long long a = (rand() % 1000000) + 1;
@@ -11,7 +11,7 @@ long long multiply_random_numbers() {
 
 // Main
 int main() {
-    srand(time(NULL)); // Initialiser le générateur de nombres aléatoires
+    srand(time(NULL)); // Initialize the random number generator
     long long result = multiply_random_numbers();
     return 0;
 }
